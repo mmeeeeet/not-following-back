@@ -7,31 +7,30 @@
 <meta name="description" content="Find out who doesn't follow you back on Instagram. No login, no password — runs 100% in your browser using Instagram's own data export.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
-    --black:#000000;
-    --cream:#ece5d3;
-    --cream-dim:#9a927e;
-    --oxblood:#6e1423;
-    --oxblood-hi:#a31621;
-    --signal:#e5383b;
-    --line:#2a2a2a;
+    --black:#0c1424;
+    --cream:#f4efe6;
+    --cream-dim:#cdbf9f;
+    --signal:#d8b878;
+    --line:#31405c;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html{background:var(--black);}
   body{
     background:var(--black);
     color:var(--cream);
-    font-family:'IBM Plex Mono',monospace;
-    font-size:15px;
-    line-height:1.55;
+    font-family:'Cormorant Garamond',serif;
+    font-size:17px;
+    line-height:1.5;
     max-width:760px;
     margin:0 auto;
     padding:48px 20px 80px;
   }
   .dateline{
+    font-family:'IBM Plex Mono',monospace;
     color:var(--signal);
     font-size:12px;
     letter-spacing:.18em;
@@ -39,22 +38,17 @@
     margin-bottom:10px;
   }
   h1{
-    font-family:'Oswald',sans-serif;
-    font-weight:600;
-    font-size:clamp(56px,13vw,118px);
-    line-height:.95;
-    letter-spacing:.01em;
-    text-transform:uppercase;
-    background:linear-gradient(180deg,var(--oxblood-hi),var(--oxblood) 70%,#3d0a13);
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent;
+    font-family:'Playfair Display',serif;
+    font-weight:700;
+    font-size:clamp(52px,12vw,104px);
+    line-height:1.02;
+    color:var(--cream);
   }
   .motto{
     font-family:'Cormorant Garamond',serif;
     font-style:italic;
     font-size:clamp(19px,3.4vw,24px);
-    color:var(--cream);
+    color:var(--cream-dim);
     margin-top:14px;
   }
   .sub{
@@ -65,6 +59,7 @@
   }
   section{margin-top:44px;}
   h2{
+    font-family:'IBM Plex Mono',monospace;
     font-size:12px;
     letter-spacing:.22em;
     text-transform:uppercase;
@@ -80,26 +75,27 @@
     padding:7px 0 7px 34px;
     position:relative;
     color:var(--cream-dim);
-    font-size:13.5px;
+    font-size:16.5px;
   }
   ol.steps li::before{
     content:counter(step,decimal-leading-zero);
     position:absolute;left:0;top:7px;
     color:var(--signal);
+    font-family:'IBM Plex Mono',monospace;
     font-size:12px;
   }
-  ol.steps li b{color:var(--cream);font-weight:500;}
+  ol.steps li b{color:var(--cream);font-weight:600;}
   #drop{
-    border:1px dashed #4a4a44;
+    border:1px dashed var(--line);
     padding:44px 20px;
     text-align:center;
     cursor:pointer;
     transition:border-color .15s ease, background .15s ease;
   }
-  #drop:hover,#drop.over{border-color:var(--signal);background:#0a0505;}
-  #drop .big{font-size:16px;color:var(--cream);}
-  #drop .small{font-size:12px;color:var(--cream-dim);margin-top:6px;}
-  #status{font-size:12.5px;color:var(--cream-dim);margin-top:12px;min-height:18px;}
+  #drop:hover,#drop.over{border-color:var(--signal);background:#101b31;}
+  #drop .big{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--cream);}
+  #drop .small{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream-dim);margin-top:6px;}
+  #status{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--cream-dim);margin-top:12px;min-height:18px;}
   #status .ok{color:var(--cream);}
   #status .warn{color:var(--signal);}
   #results{display:none;}
@@ -112,13 +108,13 @@
   .stat{padding:14px 6px;text-align:center;}
   .stat + .stat{border-left:1px solid var(--line);}
   .stat .num{
-    font-family:'Oswald',sans-serif;
-    font-size:34px;font-weight:500;
+    font-family:'Playfair Display',serif;
+    font-size:34px;font-weight:700;
     color:var(--cream);
     line-height:1;
   }
   .stat.hot .num{color:var(--signal);}
-  .stat .lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim);margin-top:6px;}
+  .stat .lbl{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim);margin-top:6px;}
   .tabs{display:flex;gap:0;margin-top:26px;border-bottom:1px solid var(--line);}
   .tab{
     font-family:'IBM Plex Mono',monospace;
@@ -134,7 +130,7 @@
   .tools{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
   .tools input{
     flex:1;min-width:180px;
-    background:#0d0d0d;border:1px solid var(--line);
+    background:#0a1120;border:1px solid var(--line);
     color:var(--cream);
     font-family:'IBM Plex Mono',monospace;font-size:13px;
     padding:9px 12px;outline:none;
@@ -151,14 +147,15 @@
   ul.list li{
     display:flex;justify-content:space-between;align-items:baseline;gap:12px;
     padding:9px 2px;
-    border-bottom:1px solid #161616;
-    font-size:14px;
+    border-bottom:1px solid #1c2a47;
+    font-size:16px;
   }
   ul.list a{color:var(--cream);text-decoration:none;}
   ul.list a:hover{color:var(--signal);}
-  ul.list .since{color:var(--cream-dim);font-size:11.5px;white-space:nowrap;}
+  ul.list .since{font-family:'IBM Plex Mono',monospace;color:var(--cream-dim);font-size:11.5px;white-space:nowrap;}
   .empty{color:var(--cream-dim);font-size:13.5px;padding:22px 0;}
   footer{
+    font-family:'IBM Plex Mono',monospace;
     margin-top:64px;
     border-top:1px solid var(--line);
     padding-top:16px;
