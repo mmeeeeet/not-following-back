@@ -165,6 +165,14 @@
   }
   footer a{color:var(--cream-dim);}
   footer a:hover{color:var(--signal);}
+  .bigbtn{
+    display:block;text-align:center;
+    border:1px solid var(--signal);color:var(--signal);
+    font-family:'IBM Plex Mono',monospace;font-size:14.5px;
+    padding:15px 18px;text-decoration:none;margin:14px 0 6px;
+  }
+  .bigbtn:hover{background:#131f38;}
+  .steps li .sub2{display:block;font-size:12px;margin-top:3px;}
   @media (max-width:560px){
     .stats{grid-template-columns:repeat(2,1fr);}
     .stat:nth-child(3){border-left:none;}
@@ -179,23 +187,23 @@
 <h1>Not Following Back</h1>
 <p class="motto">No login. No password. Nothing leaves this page.</p>
 <section>
-  <h2><span class="n">01</span>&nbsp; Get your data from Instagram</h2>
+  <h2><span class="n">01</span>&nbsp; Get your file from Instagram</h2>
   <ol class="steps">
-    <li>Open Instagram → <b>Settings</b> → <b>Accounts Centre</b></li>
-    <li><b>Your information and permissions</b> → <b>Export your information</b> (older name: “Download your information”)</li>
-    <li><b>Create export</b> → pick your account → <b>Export to device</b></li>
-    <li>Under <b>Some of your information</b>, tick only <b>Followers and following</b></li>
-    <li>Set the format to <b>JSON</b>, then download the file when Instagram says it's ready (usually a few minutes)</li>
+    <li><b>Tap the button.</b> It opens Instagram's own download page — sign in if it asks, then tap <b>Download or transfer information</b>.
+      <a class="bigbtn" href="https://accountscenter.instagram.com/info_and_permissions/dyi/" target="_blank" rel="noopener">Open Instagram's download page →</a>
+    </li>
+    <li><b>Tick one box.</b> Choose <b>Some of your information</b>, tick only <b>Followers and following</b>, pick <b>Download to device</b>, and tap <b>Start export</b>. <span class="sub2">Format: JSON is best — HTML works here too. Instagram pings you in a few minutes when the file is ready; download it.</span></li>
+    <li><b>Come back here</b> and drop the file below. That's all.</li>
   </ol>
 </section>
 
 <section>
   <h2><span class="n">02</span>&nbsp; Drop the file here</h2>
   <div id="drop" role="button" tabindex="0" aria-label="Drop your Instagram export">
-    <div class="big">Drop your export .zip — or the followers / following .json files</div>
-    <div class="small">click to browse · processed locally · nothing is uploaded</div>
+    <div class="big">Drop the .zip Instagram gave you</div>
+    <div class="small">or the followers / following files inside it · JSON or HTML · nothing is uploaded</div>
   </div>
-  <input type="file" id="picker" accept=".zip,.json" multiple hidden>
+  <input type="file" id="picker" accept=".zip,.json,.html,.htm" multiple hidden>
   <div id="status"></div>
 </section>
 
@@ -287,6 +295,47 @@
     return added >= 0;
   }
 
+  var RESERVED = {p:1, reel:1, reels:1, stories:1, explore:1, accounts:1, about:1, developer:1, legal:1, web:1, tv:1, direct:1, nametag:1};
+
+  function dateFromBlock(text){
+    if (!text) return 0;
+    var m = text.match(/([A-Z][a-z]{2} \d{1,2}, \d{4})|(\d{1,2} [A-Z][a-z]{2} \d{4})|(\d{4}-\d{2}-\d{2})/);
+    if (!m) return 0;
+    var t = Date.parse(m[0]);
+    return isNaN(t) ? 0 : Math.floor(t / 1000);
+  }
+
+  function ingestHTML(name, text){
+    var base = name.split("/").pop().toLowerCase();
+    var kind = null;
+    if (base.indexOf("following") === 0) kind = "following";
+    else if (base.indexOf("followers") === 0) kind = "followers";
+    var doc;
+    try { doc = new DOMParser().parseFromString(text, "text/html"); } catch(e){ return false; }
+    if (!kind){
+      var t = (doc.title || "").toLowerCase();
+      if (t.indexOf("followers") !== -1) kind = "followers";
+      else if (t.indexOf("following") !== -1) kind = "following";
+    }
+    if (!kind) return false;
+    var target = kind === "followers" ? followers : following;
+    var anchors = doc.querySelectorAll("a[href]");
+    var found = 0;
+    Array.prototype.forEach.call(anchors, function(a){
+      var href = a.getAttribute("href") || "";
+      var m = href.match(/instagram\.com\/(?:_u\/)?([A-Za-z0-9._]+)\/?($|\?)/);
+      if (!m) return;
+      var uname = m[1];
+      if (RESERVED[uname.toLowerCase()]) return;
+      var block = a.closest ? (a.closest("div,li,tr") || a.parentElement) : a.parentElement;
+      var ts = dateFromBlock(block ? block.textContent : "");
+      var key = uname.toLowerCase();
+      if (!target.has(key)) found++;
+      target.set(key, {username: uname, href: "https://www.instagram.com/" + uname + "/", ts: ts});
+    });
+    return found > 0;
+  }
+
   function handleFiles(files){
     var jobs = [];
     var sawAny = false;
@@ -295,23 +344,34 @@
       if (lower.endsWith(".zip")){
         sawAny = true;
         jobs.push(file.arrayBuffer().then(function(buf){
-          if (!window.JSZip) throw new Error("zip support failed to load — unzip it and drop the .json files instead");
+          if (!window.JSZip) throw new Error("zip support failed to load — unzip it and drop the followers / following files instead");
           return JSZip.loadAsync(buf);
         }).then(function(zip){
           var inner = [];
           zip.forEach(function(path, entry){
-            if (!entry.dir && path.toLowerCase().endsWith(".json")) inner.push(entry);
+            if (entry.dir) return;
+            var lp = path.toLowerCase();
+            var base = lp.split("/").pop();
+            var inFolder = lp.indexOf("followers_and_following") !== -1;
+            if (lp.endsWith(".json") && (inFolder || base.indexOf("followers") === 0 || base.indexOf("following") === 0)) inner.push(entry);
+            else if ((lp.endsWith(".html") || lp.endsWith(".htm")) && inFolder) inner.push(entry);
           });
           return Promise.all(inner.map(function(entry){
-            return entry.async("text").then(function(text){ ingest(entry.name, text); });
+            return entry.async("text").then(function(text){
+              if (entry.name.toLowerCase().endsWith(".json")) ingest(entry.name, text);
+              else ingestHTML(entry.name, text);
+            });
           }));
         }));
       } else if (lower.endsWith(".json")){
         sawAny = true;
         jobs.push(file.text().then(function(text){ ingest(file.name, text); }));
+      } else if (lower.endsWith(".html") || lower.endsWith(".htm")){
+        sawAny = true;
+        jobs.push(file.text().then(function(text){ ingestHTML(file.name, text); }));
       }
     });
-    if (!sawAny){ setStatus('<span class="warn">That file type won\'t work — drop the .zip Instagram gave you, or the .json files inside it.</span>'); return; }
+    if (!sawAny){ setStatus('<span class="warn">That file type won\'t work — drop the .zip Instagram gave you, or the followers / following files inside it.</span>'); return; }
     setStatus("Reading…");
     Promise.all(jobs).then(render).catch(function(err){
       setStatus('<span class="warn">' + err.message + '</span>');
@@ -340,11 +400,11 @@
     if (following.size) notes.push("following list: <span class='ok'>" + following.size + "</span>");
     if (followers.size) notes.push("followers list: <span class='ok'>" + followers.size + "</span>");
     if (!following.size && !followers.size){
-      setStatus('<span class="warn">Couldn\'t find a followers or following list in those files. Make sure the export format was JSON and “Followers and following” was ticked.</span>');
+      setStatus('<span class="warn">Couldn\'t find a followers or following list in those files. When you request the export, the box to tick is “Followers and following” — the files are called followers_1 and following.</span>');
       return;
     }
-    if (!following.size) notes.push('<span class="warn">still missing the following list (following.json)</span>');
-    if (!followers.size) notes.push('<span class="warn">still missing the followers list (followers_1.json)</span>');
+    if (!following.size) notes.push('<span class="warn">still missing the “following” list</span>');
+    if (!followers.size) notes.push('<span class="warn">still missing the “followers” list</span>');
     setStatus(notes.join(" · "));
     if (!following.size || !followers.size){ results.style.display = "none"; return; }
 
